@@ -28,6 +28,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TagConfigExport } from "@/components/tag-config-export";
 
 const formSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL" }),
@@ -223,41 +224,11 @@ export function TagConfigForm() {
                 NFC tag.
               </p>
 
-              <div className="space-y-2">
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="rounded-md bg-gray-50 p-3">
-                    <div className="text-sm font-medium">SDM Enc File Data</div>
-                    <div className="mt-1 break-all font-mono text-xs">
-                      {configParams.sdmEncFileData}
-                    </div>
-                  </div>
-
-                  <div className="rounded-md bg-gray-50 p-3">
-                    <div className="text-sm font-medium">Access Rights</div>
-                    <div className="mt-1 font-mono text-xs">
-                      {configParams.accessRights}
-                    </div>
-                  </div>
-
-                  <div className="rounded-md bg-gray-50 p-3">
-                    <div className="text-sm font-medium">SDM Meta Read Key</div>
-                    <div className="mt-1 font-mono text-xs">
-                      {configParams.sdmMetaReadKey}
-                    </div>
-                  </div>
-
-                  {form.watch("tagType") === "DNA_TAGTAMPER" && (
-                    <div className="rounded-md bg-gray-50 p-3">
-                      <div className="text-sm font-medium">
-                        TT Status Ctl Key
-                      </div>
-                      <div className="mt-1 font-mono text-xs">
-                        {configParams.ttStatusCtlKey}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <TagConfigExport
+                configParams={configParams}
+                redirectUrl={form.getValues("url")}
+                enableTagTamper={form.getValues("enableTagTamper")}
+              />
             </div>
           )}
         </CardContent>

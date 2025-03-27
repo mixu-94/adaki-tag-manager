@@ -1,6 +1,7 @@
 // src/app/api/tag-config/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { generateTagWriterParams } from '@/lib/crypto/utils';
+import { generateTagWriterParams, stringToHex, bufferToHex } from '@/lib/crypto/utils';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
     try {
@@ -31,8 +32,19 @@ export async function POST(request: NextRequest) {
             enableTagTamper || false
         );
 
+        // Add additional metadata useful for the NXP TagWriter app
+        const enhancedParams = {
+            ...params,
+            tagType: enableTagTamper ? "NTAG_424_DNA_TT" : "NTAG_424_DNA",
+            sdmEnabled: true,
+            urlEncoded: stringToHex(url),
+            timestamp: new Date().toISOString(),
+            // Generate a unique file identifier
+            fileId: bufferToHex(crypto.randomBytes(4)),
+        };
+
         // Don't send the actual master key back to the client
-        const { masterKey: _, ...safeParams } = params;
+        const { masterKey: _, ...safeParams } = enhancedParams;
 
         return NextResponse.json(safeParams);
 

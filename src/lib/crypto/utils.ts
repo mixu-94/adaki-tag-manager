@@ -55,6 +55,26 @@ export function encryptAES128(key: string, data: string, iv = '00000000000000000
 }
 
 /**
+ * Pad data to a multiple of 16 bytes (AES block size)
+ */
+export function padData(data: string): string {
+    // Convert hex string to buffer
+    const buffer = hexToBuffer(data);
+
+    // Calculate padding needed (PKCS#7 padding)
+    const blockSize = 16;
+    const padLength = blockSize - (buffer.length % blockSize);
+
+    // Create padding buffer
+    const padding = Buffer.alloc(padLength, padLength);
+
+    // Concatenate data and padding
+    const paddedBuffer = Buffer.concat([buffer, padding]);
+
+    return bufferToHex(paddedBuffer);
+}
+
+/**
  * Generates a derivation key based on master key and other parameters
  */
 export function generateDerivationKey(masterKey: string, uid: string, sdmReadCtr: string): string {
@@ -79,6 +99,13 @@ export function formatSDMUrl(url: string): string {
 }
 
 /**
+ * Generate a random hex string of specified length
+ */
+export function generateRandomHex(byteLength: number): string {
+    return bufferToHex(crypto.randomBytes(byteLength));
+}
+
+/**
  * Generates all parameters needed for NXP TagWriter
  */
 export interface TagWriterParams {
@@ -95,16 +122,19 @@ export function generateTagWriterParams(
     accessRights = '0F',
     enableTagTamper = false
 ): TagWriterParams {
-    // For real implementation, these would be calculated based on the actual specifications
-    // This is a placeholder implementation
-
+    // Format the URL properly
     const formattedUrl = formatSDMUrl(url);
+
+    // Convert URL to hex
     const urlHex = stringToHex(formattedUrl);
 
-    // Mock encrypted data for now
-    const sdmEncFileData = encryptAES128(masterKey, urlHex);
+    // Pad the data if necessary to meet AES block size requirements
+    const paddedUrlHex = padData(urlHex);
 
-    // Calculate derivation keys
+    // Encrypt with master key
+    const sdmEncFileData = encryptAES128(masterKey, paddedUrlHex);
+
+    // SDM Meta Read Access Key (simplified for this implementation)
     const sdmMetaReadKey = accessRights;
 
     // TagTamper status control key (only meaningful if TagTamper is enabled)
@@ -132,4 +162,19 @@ export function isValidHex(hex: string): boolean {
 export function formatUID(uid: string): string {
     // Format as XX:XX:XX:XX:XX:XX:XX
     return uid.match(/.{1,2}/g)?.join(':').toUpperCase() || uid.toUpperCase();
+}
+
+/**
+ * Generates a SUM (Secure Unique Message) for tag verification
+ */
+export function generateSUM(masterKey: string, uid: string, data: string): string {
+    // Generate CMAC for the combined UID and data
+    const signature = generateCMAC(masterKey, uid + data);
+
+    // Create SUM object
+    return JSON.stringify({
+        id: uid,
+        data: data,
+        signature: signature
+    });
 }
